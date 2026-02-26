@@ -1,0 +1,262 @@
+// banking system works like add , search , delete account deatils and withdraw or deposit the money.
+#include<stdio.h>
+#include<string.h>
+
+struct account
+{
+    int id;
+    char name[100];
+    float balance;
+};
+
+void create_account()
+{
+    FILE *fp;
+    struct account a;
+
+    fp = fopen("bank.txt","ab");
+    if(fp == NULL)
+    {
+        printf("File error\n");
+        return;
+    }
+
+    printf("Enter Account ID : ");
+    scanf("%d",&a.id);
+
+    printf("Enter Name : ");
+    scanf(" %[^\n]",a.name);
+
+    printf("Enter Initial Balance : ");
+    scanf("%f",&a.balance);
+
+    fwrite(&a,sizeof(a),1,fp);
+    fclose(fp);
+
+    printf("Account Created Successfully!\n");
+}
+
+void display_accounts()
+{
+    FILE *fp;
+    struct account a;
+
+    fp = fopen("bank.txt","rb");
+    if(fp == NULL)
+    {
+        printf("No records found\n");
+        return;
+    }
+
+    printf("\n----- ACCOUNT DETAILS -----\n");
+
+    while(fread(&a,sizeof(a),1,fp))
+    {
+        printf("\nID : %d",a.id);
+        printf("\nName : %s",a.name);
+        printf("\nBalance : %.2f",a.balance);
+        printf("\n-----------------------------\n");
+    }
+
+    fclose(fp);
+}
+
+void search_account()
+{
+    FILE *fp;
+    struct account a;
+    int id, found = 0;
+
+    printf("Enter ID to search : ");
+    scanf("%d",&id);
+
+    fp = fopen("bank.txt","rb");
+    if(fp == NULL)
+    {
+        printf("File not found\n");
+        return;
+    }
+
+    while(fread(&a,sizeof(a),1,fp))
+    {
+        if(a.id == id)
+        {
+            printf("\nAccount Found!\n");
+            printf("Name : %s\n",a.name);
+            printf("Balance : %.2f\n",a.balance);
+            found = 1;
+            break;
+        }
+    }
+
+    if(!found)
+        printf("Account not found\n");
+
+    fclose(fp);
+}
+
+void deposit()
+{
+    FILE *fp;
+    struct account a;
+    int id, found = 0;
+    float amount;
+
+    printf("Enter ID : ");
+    scanf("%d",&id);
+
+    fp = fopen("bank.txt","rb+");
+    if(fp == NULL)
+    {
+        printf("File error\n");
+        return;
+    }
+
+    while(fread(&a,sizeof(a),1,fp))
+    {
+        if(a.id == id)
+        {
+            printf("Enter deposit amount : ");
+            scanf("%f",&amount);
+
+            a.balance = a.balance + amount;
+
+            fseek(fp,-sizeof(a),SEEK_CUR);
+            fwrite(&a,sizeof(a),1,fp);
+
+            printf("Deposit Successful!\n");
+            printf("Account Balance: %0.2f",a.balance);
+            found = 1;
+            break;
+        }
+    }
+
+    if(!found)
+        printf("Account not found\n");
+
+    fclose(fp);
+}
+
+void withdraw()
+{
+    FILE *fp;
+    struct account a;
+    int id, found = 0;
+    float amount;
+
+    printf("Enter ID : ");
+    scanf("%d",&id);
+
+    fp = fopen("bank.txt","rb+");
+    if(fp == NULL)
+    {
+        printf("File error\n");
+        return;
+    }
+
+    while(fread(&a,sizeof(a),1,fp))
+    {
+        if(a.id == id)
+        {
+            printf("Enter withdraw amount : ");
+            scanf("%f",&amount);
+
+            if(amount > a.balance)
+            {
+                printf("Insufficient Balance!\n");
+            }
+            else
+            {
+                a.balance = a.balance - amount;
+
+                fseek(fp,-sizeof(a),SEEK_CUR);
+                fwrite(&a,sizeof(a),1,fp);
+
+                printf("Withdrawal Successful!\n");
+                printf("Account Balance: %0.2f ",a.balance);
+            }
+
+            found = 1;
+            break;
+        }
+    }
+
+    if(!found)
+        printf("Account not found\n");
+
+    fclose(fp);
+}
+
+void delete_account()
+{
+    FILE *fp,*temp;
+    struct account a;
+    int id, found = 0;
+
+    printf("Enter ID to delete : ");
+    scanf("%d",&id);
+
+    fp = fopen("bank.txt","rb");
+    temp = fopen("temp.txt","wb");
+
+    if(fp == NULL || temp == NULL)
+    {
+        printf("File error\n");
+        return;
+    }
+
+    while(fread(&a,sizeof(a),1,fp))
+    {
+        if(a.id == id)
+        {
+            found = 1;
+            continue;  // skip writing this record
+        }
+        fwrite(&a,sizeof(a),1,temp); 
+    }
+
+    fclose(fp);
+    fclose(temp);
+
+    remove("bank.txt");
+    rename("temp.txt","bank.txt");
+
+    if(found)
+        printf("Account Deleted Successfully!\n");
+    else
+        printf("Account not found\n");
+}
+
+int main()
+{
+    int choice;
+
+    do
+    {
+        printf("\n========== BANK SYSTEM ==========\n");
+        printf("1. Create Account\n");
+        printf("2. Display Accounts\n");
+        printf("3. Search by ID\n");
+        printf("4. Withdraw\n");
+        printf("5. Deposit\n");
+        printf("6. Delete Account\n");
+        printf("7. Exit\n");
+
+        printf("Enter choice : ");
+        scanf("%d",&choice);
+
+        switch(choice)
+        {
+            case 1: create_account(); break;
+            case 2: display_accounts(); break;
+            case 3: search_account(); break;
+            case 4: withdraw(); break;
+            case 5: deposit(); break;
+            case 6: delete_account(); break;
+            case 7: printf("Exiting...\n");break;
+            default: printf("Invalid choice\n");
+        }
+    }while(choice !=7);
+
+    return 0;
+}
